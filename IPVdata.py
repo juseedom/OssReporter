@@ -10,9 +10,9 @@ class IPVdata():
 		self.folderPath = folderPath
 		self.ipv_data = pd.DataFrame()
 		if self.folderAnalysis(self.folderPath):
-			print 'Read Data Files Successfully.'
+			print('Read Data Files Successfully.')
 		else:
-			print 'Read Data Files Failed.'
+			print('Read Data Files Failed.')
 
 
 
@@ -56,59 +56,58 @@ class IPVdata():
 		tmp_data = tmp_data[tmp_data["eNodeB Name"]==sitename]
 		tmp_data = tmp_data[tmp_data["Time"].isin(str_time)]
 		if flt_cell == "1.8GHz Only":
-			tmp_data = self.ipv_data[self.ipv_data["Cell Name"].apply(lambda x: 'L18' in str(x))]
+			tmp_data = tmp_data[tmp_data["Cell Name"].apply(lambda x: 'L18' in str(x))]
 		elif flt_cell == "2.6GHz Only":
-			tmp_data = self.ipv_data[self.ipv_data["Cell Name"].apply(lambda x: 'L26' in str(x))]
-		tmp_count = tmp_data["Integrity"].count()
+			tmp_data = tmp_data[tmp_data["Cell Name"].apply(lambda x: 'L26' in str(x))]
+		#tmp_count = tmp_data["Integrity"].count()
 		try:
-			rrc_sr = tmp_data["L.RRC.ConnReq.Succ"].sum()/tmp_data["L.RRC.ConnReq.Att"].sum()*100.0
-			erab_sr = tmp_data["L.E-RAB.SuccEst"].sum()/tmp_data["L.E-RAB.AttEst"].sum()*100.0
-			s1_sr = tmp_data["L.S1Sig.ConnEst.Succ"].sum()/tmp_data["L.S1Sig.ConnEst.Att"].sum()*100.0
+			rrc_sr = 100.0*tmp_data["L.RRC.ConnReq.Succ"].sum()/tmp_data["L.RRC.ConnReq.Att"].sum()
+			erab_sr = 100.0*tmp_data["L.E-RAB.SuccEst"].sum()/tmp_data["L.E-RAB.AttEst"].sum()
+			s1_sr = 100.0*tmp_data["L.S1Sig.ConnEst.Succ"].sum()/tmp_data["L.S1Sig.ConnEst.Att"].sum()
 			all_sr = rrc_sr*erab_sr*s1_sr/10000.0
 			all_sr = str(all_sr)[:str(all_sr).index('.')+3]
 		except ZeroDivisionError:
 			all_sr = '/0'
 		try:
-			call_drop = tmp_data["L.E-RAB.AbnormRel"].sum()/tmp_data["L.E-RAB.SuccEst"].sum()*100.0
+			call_drop = 100.0*tmp_data["L.E-RAB.AbnormRel"].sum()/tmp_data["L.E-RAB.SuccEst"].sum()
 			call_drop = str(call_drop)[:str(call_drop).index('.')+3]
 		except ZeroDivisionError:
 			call_drop = '/0'
 		try:
-			intrafreq_ho = (tmp_data["L.HHO.IntraeNB.IntraFreq.ExecSuccOut"].sum()+tmp_data["L.HHO.IntereNB.IntraFreq.ExecSuccOut"].sum())/\
-					(tmp_data["L.HHO.IntraeNB.IntraFreq.PrepAttOut"].sum()+tmp_data["L.HHO.IntereNB.IntraFreq.PrepAttOut"].sum())*100.0
+			intrafreq_ho = 100.0*(tmp_data["L.HHO.IntraeNB.IntraFreq.ExecSuccOut"].sum()+tmp_data["L.HHO.IntereNB.IntraFreq.ExecSuccOut"].sum())/\
+					(tmp_data["L.HHO.IntraeNB.IntraFreq.PrepAttOut"].sum()+tmp_data["L.HHO.IntereNB.IntraFreq.PrepAttOut"].sum())
 			intrafreq_ho = str(intrafreq_ho)[:str(intrafreq_ho).index('.')+3]
 		except ZeroDivisionError:
 			intrafreq_ho = '/0'
 		try:
-			interfreq_ho = (tmp_data["L.HHO.IntraeNB.InterFreq.ExecSuccOut"].sum()+tmp_data["L.HHO.IntereNB.InterFreq.ExecSuccOut"].sum())/\
-					(tmp_data["L.HHO.IntraeNB.InterFreq.PrepAttOut"].sum()+tmp_data["L.HHO.IntereNB.InterFreq.PrepAttOut"].sum())*100.0
+			interfreq_ho = 100.0*(tmp_data["L.HHO.IntraeNB.InterFreq.ExecSuccOut"].sum()+tmp_data["L.HHO.IntereNB.InterFreq.ExecSuccOut"].sum())/\
+					(tmp_data["L.HHO.IntraeNB.InterFreq.PrepAttOut"].sum()+tmp_data["L.HHO.IntereNB.InterFreq.PrepAttOut"].sum())
 			interfreq_ho = str(interfreq_ho)[:str(interfreq_ho).index('.')+3]
 		except ZeroDivisionError:
 			interfreq_ho = '/0'
 		try:
-			irat_ho = tmp_data["L.IRATHO.E2W.ExecSuccOut"].sum()/tmp_data["L.IRATHO.E2W.PrepAttOut"].sum()*100.0
+			irat_ho = 100.0*tmp_data["L.IRATHO.E2W.ExecSuccOut"].sum()/tmp_data["L.IRATHO.E2W.PrepAttOut"].sum()
 			irat_ho = str(irat_ho)[:str(irat_ho).index('.')+3]
 		except ZeroDivisionError:
 			irat_ho = '/0'
-		radio_avail = 100 - tmp_data["L.Cell.Unavail.Dur.Sys(s)"].sum()/tmp_count/60.0
-		radio_avail = str(radio_avail)[:str(radio_avail).index('.')+3]
-		pkt_loss = 0
-		pkt_tol = 0
-		for i in range(9):
-			pkt_loss += tmp_data[str("L.Traffic.DL.PktUuLoss.Loss.QCI.%d(packet)"%(i+1))].sum()
-			pkt_tol += tmp_data[str("L.Traffic.DL.PktUuLoss.Tot.QCI.%d(packet)"%(i+1))].sum()
-		try:
-			pkt_rate = pkt_loss/pkt_tol*100.0
-			pkt_rate = str(pkt_rate)[:str(pkt_rate).index('.')+3]
-		except ZeroDivisionError:
-			pkt_rate = '/0'
-		return [all_sr,all_sr>'99',call_drop,call_drop<'0.4',intrafreq_ho,intrafreq_ho>'95',interfreq_ho,interfreq_ho>'95',irat_ho,irat_ho>'95',radio_avail,radio_avail>'99',pkt_rate,pkt_rate<'5']
+		#radio_avail = 100 - tmp_data["L.Cell.Unavail.Dur.Sys(s)"].sum()/tmp_count/60.0
+		#radio_avail = str(radio_avail)[:str(radio_avail).index('.')+3]
+		#pkt_loss = 0
+		#pkt_tol = 0
+		#for i in range(9):
+		#	pkt_loss += tmp_data[str("L.Traffic.DL.PktUuLoss.Loss.QCI.%d(packet)"%(i+1))].sum()
+	#		pkt_tol += tmp_data[str("L.Traffic.DL.PktUuLoss.Tot.QCI.%d(packet)"%(i+1))].sum()
+	#	try:
+	#		pkt_rate = pkt_loss/pkt_tol*100.0
+	#		pkt_rate = str(pkt_rate)[:str(pkt_rate).index('.')+3]
+	#	except ZeroDivisionError:
+	#		pkt_rate = '/0'
+		return [all_sr,all_sr>'99',call_drop,call_drop<'0.4',intrafreq_ho,intrafreq_ho>'95',interfreq_ho,interfreq_ho>'95',irat_ho,irat_ho>'95']
 
 if __name__ == '__main__':
-	test = IPVdata("C:\\Users\\x00235379\\Desktop\\IPV")
+	test = IPVdata("C:\\Users\\Desktop\\IPV")
 	#print list(test.returneNBList().dropna())
-	print list 
-	#for test in os.walk("C:\\Users\\x00235379\\Desktop\\IPV"):
+	print list
 
 
 
