@@ -31,7 +31,7 @@ except AttributeError:
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         self.hr = 2**24-1
-        str_table = ["ERAB Accessibility Rate","ERAB Call Drop Rate","Intra-frequency Handover Success Rate","Inter-frequency Handover Success Rate","Inter-RAT Handover Success Rate (LTE to WCDMA)"]
+        str_table = ["M1 ERAB Accessibility Rate","M1 ERAB Call Drop Rate","M1 Intra-frequency Handover Success Rate","M1 Inter-frequency Handover Success Rate","M1 Inter-RAT Handover Success Rate (LTE to WCDMA)","M1 Radio Network availability Rate","M1 Packet Loss Rate"]
         MainWindow.setObjectName(_fromUtf8("MainWindow"))
         MainWindow.resize(600, 500)
         self.centralwidget = QtGui.QWidget(MainWindow)
@@ -58,7 +58,7 @@ class Ui_MainWindow(object):
         self.siteKeyword = QtGui.QLineEdit(self.widget)
         self.siteKeyword.setObjectName(_fromUtf8("siteKeyword"))
         self.gridLayout.addWidget(self.siteKeyword, 1, 2, 1, 1)
-        self.ossResult = QtGui.QTableWidget(len(str_table),2,self.widget)
+        self.ossResult = QtGui.QTableWidget(7,2,self.widget)
         self.ossResult.setObjectName(_fromUtf8("ossResult"))
         self.ossResult.setVerticalHeaderLabels(str_table)
         self.ossResult.setHorizontalHeaderLabels(["KPI Result", "PASS"])
@@ -145,7 +145,7 @@ class Ui_MainWindow(object):
             self.siteList.setSortingEnabled(True)
             self.siteList.sortItems(QtCore.Qt.AscendingOrder)
             self.siteList.addItems(self.data.returneNBList())
-            
+            self.folderBrowse.setEnabled(False)
         else:
             return False     
 
@@ -162,9 +162,9 @@ class Ui_MainWindow(object):
         sitename = self.siteList.currentItem().text()
         dateRange = list(self.data.filterDate(sitename))
         startDate = QtCore.QDate()
-        startDate.setDate(int(str(dateRange[0]).split('-')[0]), int(str(dateRange[0]).split('-')[1]), int(str(dateRange[0]).split('-')[2][:2]))
+        startDate.setDate(dateRange[0].year, dateRange[0].month, dateRange[0].day)
         endDate = QtCore.QDate()
-        endDate.setDate(int(str(dateRange[-1]).split('-')[0]), int(str(dateRange[-1]).split('-')[1]), int(str(dateRange[-1]).split('-')[2][:2]))
+        endDate.setDate(dateRange[-1].year, dateRange[-1].month, dateRange[-1].day)
         self.startDateEdit.setDateRange(startDate,endDate)
         self.endDateEdit.setDateRange(startDate,endDate)
         self.startDateEdit.setCalendarPopup(True)
@@ -199,6 +199,8 @@ class Ui_MainWindow(object):
             self.hr += 2**int(item.text().split(':')[0])
 
     def processData(self):
+        self.siteFilter.setEnabled(False)
+        self.timeChoose.setEnabled(False)         
         startDate = self.startDateEdit.date().toString("yyyy-MM-dd")
         endDate = self.endDateEdit.date().toString("yyyy-MM-dd")
         sitename = self.siteList.currentItem().text()
@@ -214,6 +216,8 @@ class Ui_MainWindow(object):
         clipboard = QtGui.QApplication.clipboard()
         tmp_txt = '\n'.join([('%s\tPASS' %x) for x in oss_result[::2]])
         clipboard.setText(tmp_txt)
+        self.siteFilter.setEnabled(True)
+        self.timeChoose.setEnabled(True) 
 
 
 if __name__ == "__main__":
