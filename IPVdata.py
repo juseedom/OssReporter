@@ -11,56 +11,44 @@ class IPVdata():
 		self.ipv_data = pd.DataFrame()
 		self.paths = list()
 		self.eNB = list()
+		self.DateRange = list()
 		self.sitename = ""
-		if self.folderAnalysis(self.folderPath):
-			print 'Read Data Files Successfully.'
-		else:
-			print 'Read Data Files Failed.'
-
-
+		self.folderAnalysis(self.folderPath)
 
 	def folderAnalysis(self, folderPath):
 		try:
+			self.paths = list()
+			self.DateRange = list()
 			for filetuple in os.walk(folderPath):
 				for datafile in filetuple[2]:
 					if datafile.endswith(".zip"):
 						self.paths.append(filetuple[0]+"\\"+datafile)
+						self.DateRange.append(datafile.split(".")[-2][-8:])
 						print("Found Data file:" + datafile)
-			lastdate = str()
-			for a in self.paths:
-				if a > lastdate:
-					lastdate = a
-			data_ipv = self.readzipdata(lastdate)
+			self.DateRange.sort()
+			rng_date = pd.DatetimeIndex(start=self.DateRange[0], end=self.DateRange[-1],freq="D")
+			self.DateRange = [(ddate-1) for ddate in rng_date]
+			
+			self.paths.sort()
+			data_ipv = self.readzipdata(self.paths[-1])
 			self.eNB = list(data_ipv["eNodeB Name"].drop_duplicates().dropna())
-			return True
+
 		except Exception, e:
 			raise e
 
 	def readzipdata(self, filepath):
-		#try:
-		zf = zipfile.ZipFile(filepath, "r")
-		pf = zf.open(zf.filelist[0].filename, "r")
-		data_ipv = pd.read_csv(pf, skiprows = 6, low_memory = False)
-		data_ipv = data_ipv[:-1]
-		zf.close()
-		return data_ipv
-		#except Exception, e:
-		#	raise e
+		try:
+			zf = zipfile.ZipFile(filepath, "r")
+			pf = zf.open(zf.filelist[0].filename, "r")
+			data_ipv = pd.read_csv(pf, skiprows = 6, low_memory = False)
+			data_ipv = data_ipv[:-1]
+			zf.close()
+			return data_ipv
+		except Exception, e:
+			print("Open %s failed..." %filepath)
+			raise e
 
 
-	def returneNBList(self):
-		if self.eNB:
-			return self.eNB
-
-	def filterDate(self, siteName):
-		dateRange = list()
-		for a in self.paths:
-			dateRange.append(a.split(".")[-2][-8:])
-		dateRange.sort()
-		excel_date = pd.DatetimeIndex(start=dateRange[0], end=dateRange[-1],freq="D")
-		result = [(ddate-1) for ddate in excel_date]
-		#timeRange = self.ipv_data[self.ipv_data["eNodeB Name"]==siteName].Time.drop_duplicates()
-		return result
 
 	def processData(self, startDate, endDate, hour, sitename, flt_cell):
 		#self.ipv_data.index = pd.to_datetime(self.ipv_data, format="%Y-%m-%d %H:%M", coerce=True)
@@ -72,7 +60,7 @@ class IPVdata():
 				if (hour/(2**x))%2:
 					str_time.append(str(pd_time).split()[0]+str(" %02d:00" %x))
 			for a in self.paths:
-				str_date = str(pd_time+1).split()[0].replace("-","")
+				str_date = str(pd_time+1).split()[0]
 				if a.split("\\")[-1].find(str_date) != -1:
 					ipvdata = self.readzipdata(a)
 					self.ipv_data = self.ipv_data.append(ipvdata)

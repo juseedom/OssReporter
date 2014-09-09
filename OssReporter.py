@@ -37,14 +37,14 @@ class Ui_MainWindow(object):
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.widget = QtGui.QWidget(self.centralwidget)
-        self.widget.setGeometry(QtCore.QRect(1, 1, 600, 500))
+        self.widget.setGeometry(QtCore.QRect(1, 1, 580, 480))
         self.widget.setObjectName(_fromUtf8("widget"))
         self.gridLayout = QtGui.QGridLayout(self.widget)
         #self.gridLayout.setMargin(0)
         self.gridLayout.setColumnStretch(0,1)
         self.gridLayout.setColumnStretch(1,1)
         self.gridLayout.setColumnStretch(2,1)
-        self.gridLayout.setColumnStretch(3,1)
+        #self.gridLayout.setColumnStretch(3,1)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.folderPath = QtGui.QLineEdit(self.widget)
         self.folderPath.setObjectName(_fromUtf8("folderPath"))
@@ -122,7 +122,7 @@ class Ui_MainWindow(object):
         #Add the codes here
         self.folderBrowse.clicked.connect(partial(self.browseFolder,self.folderPath))
         self.siteFilter.clicked.connect(self.sitesFilter)
-        self.siteList.itemDoubleClicked.connect(partial(self.filterDate))
+        #self.siteList.itemDoubleClicked.connect(partial(self.filterDate))
         self.timeChoose.clicked.connect(self.processData)
         self.wholeDay.stateChanged.connect(self.checkboxFuc)
 
@@ -144,31 +144,30 @@ class Ui_MainWindow(object):
             self.data = IPVdata.IPVdata(folderPath)
             self.siteList.setSortingEnabled(True)
             self.siteList.sortItems(QtCore.Qt.AscendingOrder)
-            self.siteList.addItems(self.data.returneNBList())
+            self.siteList.addItems(self.data.eNB)
             self.folderBrowse.setEnabled(False)
+            
+            dateRange = self.data.DateRange
+            startDate = QtCore.QDate()
+            startDate.setDate(dateRange[0].year, dateRange[0].month, dateRange[0].day)
+            endDate = QtCore.QDate()
+            endDate.setDate(dateRange[-1].year, dateRange[-1].month, dateRange[-1].day)
+            self.startDateEdit.setDateRange(startDate,endDate)
+            self.endDateEdit.setDateRange(startDate,endDate)
+            self.startDateEdit.setCalendarPopup(True)
+            self.endDateEdit.setCalendarPopup(True) 
         else:
             return False     
 
     def sitesFilter(self):
         tmpstr = list()
         strfilter = str(self.siteKeyword.text())
-        for site in self.data.returneNBList():
-            if strfilter in site:
+        for site in self.data.eNB:
+            if site.find(strfilter)!=-1:
                 tmpstr.append(site)
         self.siteList.clear()
         self.siteList.addItems(tmpstr)
 
-    def filterDate(self):
-        sitename = self.siteList.currentItem().text()
-        dateRange = list(self.data.filterDate(sitename))
-        startDate = QtCore.QDate()
-        startDate.setDate(dateRange[0].year, dateRange[0].month, dateRange[0].day)
-        endDate = QtCore.QDate()
-        endDate.setDate(dateRange[-1].year, dateRange[-1].month, dateRange[-1].day)
-        self.startDateEdit.setDateRange(startDate,endDate)
-        self.endDateEdit.setDateRange(startDate,endDate)
-        self.startDateEdit.setCalendarPopup(True)
-        self.endDateEdit.setCalendarPopup(True)
 
     def checkboxFuc(self):
         if self.wholeDay.checkState() != QtCore.Qt.Checked:
@@ -201,8 +200,8 @@ class Ui_MainWindow(object):
     def processData(self):
         self.siteFilter.setEnabled(False)
         self.timeChoose.setEnabled(False)         
-        startDate = self.startDateEdit.date().toString("yyyy-MM-dd")
-        endDate = self.endDateEdit.date().toString("yyyy-MM-dd")
+        startDate = self.startDateEdit.date().toString("yyyyMMdd")
+        endDate = self.endDateEdit.date().toString("yyyyMMdd")
         sitename = self.siteList.currentItem().text()
         sltHour = self.hr
         flt_cell = str(self.freqlist.currentText())
