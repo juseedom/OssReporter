@@ -60,7 +60,7 @@ class IPVdata():
 				if (hour/(2**x))%2:
 					str_time.append(str(pd_time).split()[0]+str(" %02d:00" %x))
 			for a in self.paths:
-				str_date = str(pd_time+1).split()[0]
+				str_date = str(pd_time+1).split()[0].replace("-","")
 				if a.split("\\")[-1].find(str_date) != -1:
 					ipvdata = self.readzipdata(a)
 					self.ipv_data = self.ipv_data.append(ipvdata)
